@@ -35,7 +35,7 @@ export class UsersService implements OnModuleInit {
   }
 
   async create(createUserDto: CreateUserDto): Promise<UserDocument> {
-    const { login, password, fullName, role } = createUserDto;
+    const { login, password, fullName, role, companyId } = createUserDto;
 
     const existingUser = await this.userModel.findOne({ login }).exec();
 
@@ -52,12 +52,16 @@ export class UsersService implements OnModuleInit {
       passwordHash,
       role,
       mustChangePassword: true,
+      companyId,
     });
 
     return newUser.save();
   }
 
-  async findByLogin(login: string): Promise<UserDocument | null> {
-    return this.userModel.findOne({ login }).exec();
+  async findByLogin(
+    login: string,
+    companyId: string,
+  ): Promise<UserDocument | null> {
+    return this.userModel.findOne({ login, companyId }).exec();
   }
 }

@@ -12,18 +12,37 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async validateUser(loginDto: LoginDto): Promise<AuthenticatedUser> {
-    const { login, password }: LoginDto = loginDto;
+  async generateTokens(user: AuthenticatedUser) {
+    const payload: JwtPayload = {
+      sub: user.id,
+      login: user.login,
+      fullName: user.fullName,
+      role: user.role,
+      mustChangePassword: user.mustChangePassword,
+      companyId: user.companyId,
+    };
 
-    const user = await this.usersService.findByLogin(login);
+    const accessToken = await this.jwtService.signAsync(payload, {
+      expiresIn: '15m',
+    });
+
+    const refreshToken = await this.jwtService.signAsync(payload, {
+      expiresIn: '7d',
+    });
+
+    return { accessToken, refreshToken };
+  }
+
+  async validateUser(loginDto: LoginDto): Promise<AuthenticatedUser> {
+    const { login, password, companyId } = loginDto;
+
+    const user = await this.usersService.findByLogin(login, companyId);
 
     if (!user) {
       throw new UnauthorizedException('Користувача не знайдено');
     }
 
-    const passwordHash: string = user.passwordHash;
-
-    const isPasswordValid = await bcrypt.compare(password, passwordHash);
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Невірний пароль');
@@ -35,6 +54,7 @@ export class AuthService {
       fullName: user.fullName,
       role: user.role,
       mustChangePassword: user.mustChangePassword,
+      companyId: user.companyId,
     };
   }
 
@@ -45,6 +65,7 @@ export class AuthService {
       fullName: user.fullName,
       role: user.role,
       mustChangePassword: user.mustChangePassword,
+      companyId: user.companyId,
     };
 
     const accessToken = await this.jwtService.signAsync(payload);
@@ -52,5 +73,52 @@ export class AuthService {
     return {
       accessToken,
     };
+  }
+
+  async refreshTokens(refreshToken: string) {
+    try {
+      const payload =
+        await this.jwtService.verifyAsync<JwtPayload>(refreshToken);
+
+      const user = await this.usersService.findByLogin(
+        payload.login,
+        payload.companyId,
+      );
+
+      if (!user) {
+        throw new UnauthorizedException();
+      }
+
+      return this.generateTokens({
+        id: user._id.toString(),
+        login: user.login,
+        fullName: user.fullName,
+        role: user.role,
+        mustChangePassword: user.mustChangePassword,
+        companyId: user.companyId,
+      });
+    } catch {
+      throw new UnauthorizedException();
+    }
+  }
+
+  async resetPassword(userId: string, newPassword: string, companyId: string) {
+    const user = await this.userModel.findOne({
+      _id: userId,
+      companyId,
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(newPassword, salt);
+
+    user.mustChangePassword = true;
+
+    await user.save();
+
+    return { success: true };
   }
 }

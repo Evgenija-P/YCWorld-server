@@ -19,4 +19,8 @@ export class CreateUserDto {
   @ApiProperty({ enum: UserRole })
   @IsEnum(UserRole)
   role: UserRole;
+
+  @ApiProperty({ example: 'Наша компанія' })
+  @IsString()
+  companyId: string;
 }

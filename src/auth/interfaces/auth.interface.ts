@@ -6,6 +6,7 @@ export interface JwtPayload {
   role: UserRole;
   mustChangePassword: boolean;
   fullName: string;
+  companyId: string;
 }
 
 export interface AuthenticatedUser {
@@ -14,4 +15,5 @@ export interface AuthenticatedUser {
   fullName: string;
   role: UserRole;
   mustChangePassword: boolean;
+  companyId: string;
 }
