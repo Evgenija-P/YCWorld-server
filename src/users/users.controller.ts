@@ -10,7 +10,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  @Roles(UserRole.SUPERADMIN, UserRole.USER)
+  @Roles(UserRole.SUPERADMIN as UserRole, UserRole.ADMIN as UserRole)
   async createUser(
     @Body() dto: CreateUserDto,
     @Req() req: Request & { user: { companyId: string } },

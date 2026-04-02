@@ -13,10 +13,16 @@ import { Public } from './decorators/public.decorator';
 import { LoginDto } from './dto/login.dto';
 import { AuthenticatedUser } from './interfaces/auth.interface';
 import { Roles } from './decorators/roles.decorator';
+import { UserRole } from '../users/enums/user-role.enum';
+
+import { UsersService } from '../users/users.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Public()
   @Post('login')
@@ -90,15 +96,28 @@ export class AuthController {
     return { success: true };
   }
 
-  @Post('reset-password')
-  @Roles(UserRole.SUPERADMIN, UserRole.USER)
-  async resetPassword(@Body() dto: ResetPasswordDto, @Req() req) {
-    const currentUser = req.user;
+  @Post('change-password')
+  async changePassword(
+    @Body() dto: { newPassword: string },
+    @Req() req: { user: AuthenticatedUser },
+  ) {
+    return this.usersService.changePassword(
+      req.user.id,
+      dto.newPassword,
+      req.user.companyId,
+    );
+  }
 
-    return this.usersService.resetPassword(
+  @Post('admin/reset-password')
+  @Roles(UserRole.SUPERADMIN)
+  async resetPassword(
+    @Body() dto: { userId: string; newPassword: string },
+    @Req() req: { user: AuthenticatedUser },
+  ) {
+    return this.usersService.adminResetPassword(
       dto.userId,
       dto.newPassword,
-      currentUser.companyId,
+      req.user.companyId,
     );
   }
 }

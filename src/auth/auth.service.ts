@@ -101,24 +101,4 @@ export class AuthService {
       throw new UnauthorizedException();
     }
   }
-
-  async resetPassword(userId: string, newPassword: string, companyId: string) {
-    const user = await this.userModel.findOne({
-      _id: userId,
-      companyId,
-    });
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    user.passwordHash = await bcrypt.hash(newPassword, salt);
-
-    user.mustChangePassword = true;
-
-    await user.save();
-
-    return { success: true };
-  }
 }

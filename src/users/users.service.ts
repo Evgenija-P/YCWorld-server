@@ -28,6 +28,7 @@ export class UsersService implements OnModuleInit {
         passwordHash,
         role: UserRole.SUPERADMIN,
         mustChangePassword: true,
+        companyId: 'default',
       });
 
       console.log('--- DEFAULT ADMIN CREATED: admin / admin123 ---');
@@ -63,5 +64,61 @@ export class UsersService implements OnModuleInit {
     companyId: string,
   ): Promise<UserDocument | null> {
     return this.userModel.findOne({ login, companyId }).exec();
+  }
+
+  async adminResetPassword(
+    userId: string,
+    newPassword: string,
+    companyId: string,
+  ) {
+    const user = await this.userModel.findOne({ _id: userId, companyId });
+
+    if (!user) throw new Error('User not found');
+
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(newPassword, salt);
+
+    // ❗ форсимо зміну
+    user.mustChangePassword = true;
+
+    await user.save();
+
+    return { success: true };
+  }
+
+  async changePassword(userId: string, newPassword: string, companyId: string) {
+    const user = await this.userModel.findOne({ _id: userId, companyId });
+
+    if (!user) throw new Error('User not found');
+
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(newPassword, salt);
+
+    // ❗ знімаємо форс
+    user.mustChangePassword = false;
+
+    await user.save();
+
+    return { success: true };
+  }
+
+  async resetPassword(userId: string, newPassword: string, companyId: string) {
+    const user = await this.userModel.findOne({
+      _id: userId,
+      companyId,
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(newPassword, salt);
+
+    user.mustChangePassword = true;
+
+    await user.save();
+
+    return { success: true };
   }
 }
