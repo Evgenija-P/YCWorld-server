@@ -23,15 +23,17 @@ export class UsersService implements OnModuleInit {
       const passwordHash = await bcrypt.hash('admin123', salt);
 
       await this.userModel.create({
-        login: 'admin',
+        login: 'superadmin',
         fullName: 'Головний Адміністратор',
         passwordHash,
         role: UserRole.SUPERADMIN,
         mustChangePassword: true,
-        companyId: 'default',
+        companyId: 'root',
       });
 
-      console.log('--- DEFAULT ADMIN CREATED: admin / admin123 ---');
+      console.log(
+        '--- DEFAULT ADMIN CREATED: admin / admin123 / company "root" ---',
+      );
     }
   }
 

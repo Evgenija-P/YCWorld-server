@@ -5,6 +5,13 @@ import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthenticatedUser, JwtPayload } from './interfaces/auth.interface';
 
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  accessTokenExpiresIn: number;
+  user: AuthenticatedUser;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -22,15 +29,21 @@ export class AuthService {
       companyId: user.companyId,
     };
 
+    const accessTokenExpiresIn = 15 * 60; // секунди
+
     const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '15m',
+      expiresIn: accessTokenExpiresIn,
     });
 
     const refreshToken = await this.jwtService.signAsync(payload, {
       expiresIn: '7d',
     });
 
-    return { accessToken, refreshToken };
+    return {
+      accessToken,
+      refreshToken,
+      accessTokenExpiresIn,
+    };
   }
 
   async validateUser(loginDto: LoginDto): Promise<AuthenticatedUser> {

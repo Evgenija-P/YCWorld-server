@@ -26,30 +26,17 @@ export class AuthController {
 
   @Public()
   @Post('login')
-  async login(
-    @Body() loginDto: LoginDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async login(@Body() loginDto: LoginDto) {
     const user = await this.authService.validateUser(loginDto);
 
     const { accessToken, refreshToken } =
       await this.authService.generateTokens(user);
 
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
-      maxAge: 15 * 60 * 1000,
-    });
-
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    return user;
+    return {
+      accessToken,
+      refreshToken,
+      user,
+    };
   }
 
   @Get('me')
@@ -59,33 +46,12 @@ export class AuthController {
 
   @Public()
   @Post('refresh')
-  async refresh(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const refreshToken = req.cookies?.refresh_token as string | undefined;
-
-    if (!refreshToken) {
+  async refresh(@Body() body: { refreshToken: string }) {
+    if (!body.refreshToken) {
       throw new UnauthorizedException();
     }
 
-    const tokens = await this.authService.refreshTokens(refreshToken);
-
-    res.cookie('access_token', tokens.accessToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
-      maxAge: 15 * 60 * 1000,
-    });
-
-    res.cookie('refresh_token', tokens.refreshToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    return { success: true };
+    return this.authService.refreshTokens(body.refreshToken);
   }
 
   @Post('logout')
