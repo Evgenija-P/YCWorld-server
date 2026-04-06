@@ -9,14 +9,7 @@ import { JwtPayload, AuthenticatedUser } from '../interfaces/auth.interface';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly configService: ConfigService) {
     super({
-      jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: Request): string | null => {
-          if (request && request.cookies) {
-            return (request.cookies['access_token'] as string) ?? null;
-          }
-          return null;
-        },
-      ]),
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('JWT_SECRET', 'fallback_secret'),
     });

@@ -61,11 +61,8 @@ export class UsersService implements OnModuleInit {
     return newUser.save();
   }
 
-  async findByLogin(
-    login: string,
-    companyId: string,
-  ): Promise<UserDocument | null> {
-    return this.userModel.findOne({ login, companyId }).exec();
+  async findByLogin(login: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ login }).exec();
   }
 
   async adminResetPassword(

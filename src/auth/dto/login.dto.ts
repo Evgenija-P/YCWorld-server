@@ -16,7 +16,4 @@ export class LoginDto {
   @IsString({ message: 'Пароль має бути рядком' })
   @MinLength(6, { message: 'Пароль має бути не менше 6 символів' })
   password: string;
-
-  @IsString()
-  companyId: string;
 }

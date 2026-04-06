@@ -47,9 +47,9 @@ export class AuthService {
   }
 
   async validateUser(loginDto: LoginDto): Promise<AuthenticatedUser> {
-    const { login, password, companyId } = loginDto;
+    const { login, password } = loginDto;
 
-    const user = await this.usersService.findByLogin(login, companyId);
+    const user = await this.usersService.findByLogin(login);
 
     if (!user) {
       throw new UnauthorizedException('Користувача не знайдено');
@@ -93,10 +93,7 @@ export class AuthService {
       const payload =
         await this.jwtService.verifyAsync<JwtPayload>(refreshToken);
 
-      const user = await this.usersService.findByLogin(
-        payload.login,
-        payload.companyId,
-      );
+      const user = await this.usersService.findByLogin(payload.login);
 
       if (!user) {
         throw new UnauthorizedException();
