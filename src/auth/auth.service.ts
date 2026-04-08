@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthenticatedUser, JwtPayload } from './interfaces/auth.interface';
+import { UserRole } from '../users/enums/user-role.enum';
 
 export interface AuthResponse {
   accessToken: string;
@@ -26,7 +27,7 @@ export class AuthService {
       fullName: user.fullName,
       role: user.role,
       mustChangePassword: user.mustChangePassword,
-      companyId: user.companyId,
+      companyId: user.companyId.toString(), // 🔥 ВАЖЛИВО
     };
 
     const accessTokenExpiresIn = 15 * 60; // секунди
@@ -65,9 +66,9 @@ export class AuthService {
       id: user._id.toString(),
       login: user.login,
       fullName: user.fullName,
-      role: user.role,
+      role: user.role as UserRole,
       mustChangePassword: user.mustChangePassword,
-      companyId: user.companyId,
+      companyId: user.companyId, // тут залишаємо ObjectId
     };
   }
 
@@ -78,7 +79,7 @@ export class AuthService {
       fullName: user.fullName,
       role: user.role,
       mustChangePassword: user.mustChangePassword,
-      companyId: user.companyId,
+      companyId: user.companyId.toString(), // 🔥 ВАЖЛИВО
     };
 
     const accessToken = await this.jwtService.signAsync(payload);
@@ -103,9 +104,9 @@ export class AuthService {
         id: user._id.toString(),
         login: user.login,
         fullName: user.fullName,
-        role: user.role,
+        role: user.role as UserRole,
         mustChangePassword: user.mustChangePassword,
-        companyId: user.companyId,
+        companyId: user.companyId, // ObjectId
       });
     } catch {
       throw new UnauthorizedException();

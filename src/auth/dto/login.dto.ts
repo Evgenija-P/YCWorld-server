@@ -3,7 +3,7 @@ import { IsString, MinLength } from 'class-validator';
 
 export class LoginDto {
   @ApiProperty({
-    example: 'ivanov_i',
+    example: 'shevchenko.taras',
     description: 'Логін користувача',
   })
   @IsString({ message: 'Логін має бути рядком' })

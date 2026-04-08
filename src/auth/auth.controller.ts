@@ -16,7 +16,12 @@ import { Roles } from './decorators/roles.decorator';
 import { UserRole } from '../users/enums/user-role.enum';
 
 import { UsersService } from '../users/users.service';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { RefreshDto } from './dto/refresh.dto';
+import { ChangePasswordDto } from '../users/dto/change-password.dto';
+import { ResetPasswordDto } from '../users/dto/reset-password.dto';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -25,6 +30,8 @@ export class AuthController {
   ) {}
 
   @Public()
+  @ApiOperation({ summary: 'Login' })
+  @ApiBody({ type: LoginDto })
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
     const user = await this.authService.validateUser(loginDto);
@@ -39,14 +46,19 @@ export class AuthController {
     };
   }
 
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Отримати профіль' })
+  @ApiBearerAuth('JWT-auth')
   @Get('me')
   getProfile(@Req() req: { user: AuthenticatedUser }) {
     return req.user;
   }
 
   @Public()
+  @ApiOperation({ summary: 'Refresh token' })
+  @ApiBody({ type: RefreshDto })
   @Post('refresh')
-  async refresh(@Body() body: { refreshToken: string }) {
+  async refresh(@Body() body: RefreshDto) {
     if (!body.refreshToken) {
       throw new UnauthorizedException();
     }
@@ -54,6 +66,8 @@ export class AuthController {
     return this.authService.refreshTokens(body.refreshToken);
   }
 
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Вийти з системи' })
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('access_token');
@@ -62,11 +76,16 @@ export class AuthController {
     return { success: true };
   }
 
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Змінити пароль' })
+  @ApiBody({ type: ChangePasswordDto })
   @Post('change-password')
   async changePassword(
-    @Body() dto: { newPassword: string },
+    @Body() dto: ChangePasswordDto,
     @Req() req: { user: AuthenticatedUser },
   ) {
+    console.log('Changing password for user:', req.user.id);
+    console.log('New password:', dto.newPassword);
     return this.usersService.changePassword(
       req.user.id,
       dto.newPassword,
@@ -74,10 +93,13 @@ export class AuthController {
     );
   }
 
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Скинути пароль (адміністратор)' })
+  @ApiBody({ type: ResetPasswordDto })
   @Post('admin/reset-password')
   @Roles(UserRole.SUPERADMIN)
   async resetPassword(
-    @Body() dto: { userId: string; newPassword: string },
+    @Body() dto: ResetPasswordDto,
     @Req() req: { user: AuthenticatedUser },
   ) {
     return this.usersService.adminResetPassword(

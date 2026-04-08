@@ -1,32 +1,55 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { ApiProperty } from '@nestjs/swagger';
+import { Document, Types } from 'mongoose';
 import { UserRole } from '../enums/user-role.enum';
 
-export type UserDocument = HydratedDocument<User>;
+export type UserDocument = User & Document;
 
-@Schema({ timestamps: true })
+@Schema()
 export class User {
-  @Prop({ unique: true, required: true, trim: true })
+  @ApiProperty({
+    example: 'shevchenko.taras',
+    description: 'Логін користувача',
+  })
+  @Prop({ required: true, unique: true })
   login: string;
 
-  @Prop({ required: true, trim: true })
+  @ApiProperty({
+    example: 'Шевченко Тарас Григорович',
+    description: "Повне ім'я користувача",
+  })
+  @Prop()
   fullName: string;
 
+  @ApiProperty({
+    example: 'password123',
+    description: 'Пароль користувача',
+  })
   @Prop({ required: true })
   passwordHash: string;
 
-  @Prop({
-    type: String,
+  @ApiProperty({
+    example: 'admin',
+    description: 'Роль користувача',
     enum: UserRole,
-    default: UserRole.VIEWER,
   })
-  role: UserRole;
+  @Prop({ required: true })
+  role: string;
 
-  @Prop({ default: true })
+  @ApiProperty({
+    example: false,
+    description: 'Чи потрібно користувачу змінити пароль при наступному вході',
+  })
+  @Prop({ default: false })
   mustChangePassword: boolean;
 
-  @Prop({ required: true })
-  companyId: string;
+  @ApiProperty({ example: 'Компанія', description: 'Компанія користувача' })
+  @Prop({ type: Types.ObjectId, ref: 'Company', required: true })
+  companyId: Types.ObjectId;
+
+  @ApiProperty({ example: true, description: 'Стан користувача' })
+  @Prop({ default: true })
+  isActive: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

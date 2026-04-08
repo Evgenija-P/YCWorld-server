@@ -1,13 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { JwtPayload, AuthenticatedUser } from '../interfaces/auth.interface';
+import { UnauthorizedException } from '@nestjs/common';
+import { UsersService } from '../../users/users.service';
+import { UserRole } from '../../users/enums/user-role.enum';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly usersService: UsersService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -15,14 +20,28 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: JwtPayload): AuthenticatedUser {
+  async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
+    const user = await this.usersService.findById(payload.sub);
+
+    if (!user) {
+      throw new UnauthorizedException('USER_NOT_FOUND');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('USER_INACTIVE');
+    }
+
+    if (!Object.values(UserRole).includes(user.role as UserRole)) {
+      throw new UnauthorizedException('Invalid role');
+    }
+
     return {
-      id: payload.sub,
-      login: payload.login,
-      role: payload.role,
-      mustChangePassword: payload.mustChangePassword,
-      fullName: payload.fullName,
-      companyId: payload.companyId,
+      id: user._id.toString(),
+      login: user.login,
+      fullName: user.fullName,
+      role: user.role as UserRole,
+      mustChangePassword: user.mustChangePassword,
+      companyId: user.companyId,
     };
   }
 }

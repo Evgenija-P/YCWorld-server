@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { UserRole } from '../../users/enums/user-role.enum';
 
 export interface JwtPayload {
@@ -6,7 +7,7 @@ export interface JwtPayload {
   role: UserRole;
   mustChangePassword: boolean;
   fullName: string;
-  companyId: string;
+  companyId: string; // 👈 залишаємо string
 }
 
 export interface AuthenticatedUser {
@@ -15,5 +16,5 @@ export interface AuthenticatedUser {
   fullName: string;
   role: UserRole;
   mustChangePassword: boolean;
-  companyId: string;
+  companyId: Types.ObjectId; // 👈 ось тут міняємо
 }
