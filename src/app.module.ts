@@ -8,6 +8,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard'; // Створимо
 import { AuthModule } from './auth/auth.module';
 import { CompanyModule } from './company/company.module';
 import { SettingsModule } from './settings/settings.module';
+import { YcCountriesModule } from './ycw/yc-countries.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { SettingsModule } from './settings/settings.module';
     UsersModule,
     CompanyModule,
     SettingsModule,
+    YcCountriesModule,
   ],
   providers: [
     {

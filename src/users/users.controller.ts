@@ -47,6 +47,14 @@ export class UsersController {
     return this.usersService.findByCompany(req.user.companyId);
   }
 
+  @Get(':id')
+  @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Отримати користувача' })
+  @ApiParam({ name: 'id', example: '65f1c9e2b3a...' })
+  async findUserById(@Param('id') userId: string) {
+    return this.usersService.findById(userId);
+  }
+
   // 🔹 update користувача
   @Patch(':id')
   @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)
