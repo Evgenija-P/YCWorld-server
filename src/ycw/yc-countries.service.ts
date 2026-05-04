@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { HttpService } from '@nestjs/axios';
 import * as fs from 'fs';
 import * as path from 'path';
+import { SettingsService } from '../settings/settings.service';
 
 type YcCountriesResponse = {
   statusCode: number;
@@ -24,9 +25,20 @@ export class YcCountriesService {
 
   constructor(
     private readonly http: HttpService,
+    private readonly settingsService: SettingsService,
     @InjectModel('CountryCache')
     private readonly countryModel: Model<CountryDoc>,
   ) {}
+
+  private async getApiKey(): Promise<string | null> {
+    const settings = await this.settingsService.getApiKey();
+
+    if (settings?.apiKey) {
+      return settings.apiKey;
+    }
+
+    return process.env.YC_API_KEY ?? null;
+  }
 
   async getCountries() {
     const cached = await this.countryModel.findOne();
@@ -36,7 +48,8 @@ export class YcCountriesService {
     }
 
     let data: unknown;
-
+    console.log(process.env.YC_USE_MOCK);
+    console.log(`Fetching countries from ${this.useMock ? 'mock' : 'API'}...`);
     try {
       if (this.useMock) {
         data = this.loadMockCountries();
@@ -64,16 +77,23 @@ export class YcCountriesService {
   }
 
   private async fetchFromApi(): Promise<unknown> {
+    const apiKey = await this.getApiKey();
+
+    if (!apiKey) {
+      throw new InternalServerErrorException('API key is missing');
+    }
+
     const { data } = await this.http.axiosRef.get<YcCountriesResponse>(
       `${this.baseUrl}/Country`,
       {
         headers: {
-          'X-API-KEY': this.apiKey,
+          'X-API-KEY': apiKey,
           Accept: 'text/plain',
         },
       },
     );
 
+    console.log('Raw API response:', data);
     return data;
   }
 
