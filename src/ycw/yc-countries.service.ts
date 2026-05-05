@@ -1,9 +1,11 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { HttpService } from '@nestjs/axios';
-import * as fs from 'fs';
-import * as path from 'path';
 import { SettingsService } from '../settings/settings.service';
 
 type YcCountriesResponse = {
@@ -11,17 +13,14 @@ type YcCountriesResponse = {
   result: Record<string, string>;
 };
 
-// тип документа
 export type CountryDoc = {
   countries: { code: string; name: string }[];
   updatedAt: Date;
 };
 
 @Injectable()
-export class YcCountriesService {
+export class YcCountriesService implements OnModuleInit {
   private readonly baseUrl = process.env.YC_API_URL;
-  private readonly apiKey = process.env.YC_API_KEY;
-  private readonly useMock = process.env.YC_USE_MOCK === 'true';
 
   constructor(
     private readonly http: HttpService,
@@ -29,6 +28,25 @@ export class YcCountriesService {
     @InjectModel('CountryCache')
     private readonly countryModel: Model<CountryDoc>,
   ) {}
+
+  // ===== INIT =====
+
+  async onModuleInit() {
+    const cached = await this.countryModel.findOne();
+
+    if (!cached || !cached.countries?.length) {
+      console.warn('Countries not initialized');
+      return;
+    }
+
+    console.log(
+      `Countries loaded. Updated at: ${cached.updatedAt?.toISOString()}. Expired: ${this.isExpired(
+        cached.updatedAt,
+      )}`,
+    );
+  }
+
+  // ===== API KEY =====
 
   private async getApiKey(): Promise<string | null> {
     const settings = await this.settingsService.getApiKey();
@@ -40,49 +58,62 @@ export class YcCountriesService {
     return process.env.YC_API_KEY ?? null;
   }
 
+  // ===== GET COUNTRIES (ONLY FROM DB) =====
+
   async getCountries() {
     const cached = await this.countryModel.findOne();
 
-    if (cached && !this.isExpired(cached.updatedAt)) {
-      return cached.countries;
+    if (!cached || !cached.countries?.length) {
+      return {
+        countries: [],
+        status: 'empty',
+        updatedAt: null,
+      };
     }
 
-    let data: unknown;
-    console.log(process.env.YC_USE_MOCK);
-    console.log(`Fetching countries from ${this.useMock ? 'mock' : 'API'}...`);
-    try {
-      if (this.useMock) {
-        data = this.loadMockCountries();
-      } else {
-        data = await this.fetchFromApi();
-      }
-
-      const countries = this.normalizeCountries(data);
-
-      if (cached) {
-        cached.countries = countries;
-        cached.updatedAt = new Date();
-        await cached.save();
-      } else {
-        await this.countryModel.create({
-          countries,
-          updatedAt: new Date(),
-        });
-      }
-
-      return countries;
-    } catch {
-      throw new InternalServerErrorException('Failed to fetch countries');
-    }
+    return {
+      countries: cached.countries,
+      status: this.isExpired(cached.updatedAt) ? 'expired' : 'valid',
+      updatedAt: cached.updatedAt,
+    };
   }
 
-  private async fetchFromApi(): Promise<unknown> {
+  // ===== UPDATE (ONLY BY USER ACTION) =====
+
+  async updateCountries() {
     const apiKey = await this.getApiKey();
 
     if (!apiKey) {
       throw new InternalServerErrorException('API key is missing');
     }
 
+    const data = await this.fetchFromApi(apiKey);
+    const countries = this.normalizeCountries(data);
+
+    const existing = await this.countryModel.findOne();
+
+    if (existing) {
+      existing.countries = countries;
+      existing.updatedAt = new Date();
+      await existing.save();
+    } else {
+      await this.countryModel.create({
+        countries,
+        updatedAt: new Date(),
+      });
+    }
+
+    console.log('Countries updated successfully', existing);
+
+    return {
+      success: true,
+      updatedAt: new Date(),
+    };
+  }
+
+  // ===== FETCH =====
+
+  private async fetchFromApi(apiKey: string): Promise<unknown> {
     const { data } = await this.http.axiosRef.get<YcCountriesResponse>(
       `${this.baseUrl}/Country`,
       {
@@ -93,16 +124,10 @@ export class YcCountriesService {
       },
     );
 
-    console.log('Raw API response:', data);
     return data;
   }
 
-  private loadMockCountries(): unknown {
-    const filePath = path.join(process.cwd(), 'src/mocks/countries.json');
-
-    const raw = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(raw);
-  }
+  // ===== NORMALIZE =====
 
   private normalizeCountries(data: unknown) {
     const result =
@@ -116,13 +141,28 @@ export class YcCountriesService {
     }));
   }
 
+  // ===== TTL =====
+
   private isExpired(date: Date) {
-    const TTL = 24 * 60 * 60 * 1000;
+    const TTL = 25 * 24 * 60 * 60 * 1000; // 25 днів
     return Date.now() - new Date(date).getTime() > TTL;
   }
 
-  async hasCountries() {
-    const doc = await this.countryModel.findOne();
-    return { exists: !!doc?.countries?.length };
+  // ===== STATUS =====
+
+  async getStatus() {
+    const cached = await this.countryModel.findOne();
+
+    if (!cached || !cached.countries?.length) {
+      return {
+        status: 'empty',
+        updatedAt: null,
+      };
+    }
+
+    return {
+      status: this.isExpired(cached.updatedAt) ? 'expired' : 'valid',
+      updatedAt: cached.updatedAt,
+    };
   }
 }
