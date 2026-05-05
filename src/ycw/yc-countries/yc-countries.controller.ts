@@ -1,6 +1,7 @@
 import { Controller, Get, Post } from '@nestjs/common';
+
+import { Public } from '../../auth/decorators/public.decorator';
 import { YcCountriesService } from './yc-countries.service';
-import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('yc/countries')
 export class YcCountriesController {

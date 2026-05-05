@@ -6,7 +6,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { HttpService } from '@nestjs/axios';
-import { SettingsService } from '../settings/settings.service';
+import { SettingsService } from '../../settings/settings.service';
 
 type YcCountriesResponse = {
   statusCode: number;
