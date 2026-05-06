@@ -12,4 +12,5 @@ export class YcSchemasCache {
   updatedAt: Date;
 }
 
-export const YcSchemasCacheSchema = SchemaFactory.createForClass(YcSchemasCache);
+export const YcSchemasCacheSchema =
+  SchemaFactory.createForClass(YcSchemasCache);

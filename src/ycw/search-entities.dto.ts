@@ -1,11 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean, IsInt, IsArray, Min } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsInt,
+  IsArray,
+  Min,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 export class SearchEntitiesDto {
   @ApiProperty({
     description: 'Пошуковий рядок: назва, ЄДРПОУ, ПІБ, телефон тощо',
-    example: 'Нафтогаз',
+    example: 'Пошуковець',
   })
   @IsString()
   searchString: string;
@@ -41,21 +48,33 @@ export class SearchEntitiesDto {
   @IsString({ each: true })
   countries?: string[];
 
-  @ApiProperty({ description: 'Кількість результатів на сторінці', example: 10, required: false })
+  @ApiProperty({
+    description: 'Кількість результатів на сторінці',
+    example: 10,
+    required: false,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   pageSize?: number;
 
-  @ApiProperty({ description: 'Зміщення (пагінація)', example: 0, required: false })
+  @ApiProperty({
+    description: 'Зміщення (пагінація)',
+    example: 0,
+    required: false,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
   offset?: number;
 
-  @ApiProperty({ description: 'Фільтр тільки PEP', example: false, required: false })
+  @ApiProperty({
+    description: 'Фільтр тільки PEP',
+    example: false,
+    required: false,
+  })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean()
