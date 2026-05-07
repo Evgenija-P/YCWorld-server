@@ -9,9 +9,10 @@ import { HttpService } from '@nestjs/axios';
 import { SettingsService } from '../settings/settings.service';
 import { firstValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
-
+import qs from 'qs';
 export const YCW_BASE_URL =
   process.env.YC_API_URL ?? 'https://api.youcontrol.world';
+// export const YCW_BASE_URL = 'https://api.youcontrol.worldss';
 const REQUEST_TIMEOUT = 15_000;
 
 @Injectable()
@@ -42,6 +43,18 @@ export class YcwHttpService {
   ): Promise<T> {
     const apiKey = await this.getApiKey();
 
+    const cleanParams = Object.fromEntries(
+      Object.entries(params ?? {}).filter(
+        ([, value]) => value !== undefined && value !== null,
+      ),
+    );
+
+    const queryString = qs.stringify(cleanParams, {
+      arrayFormat: 'repeat',
+    });
+
+    console.log('REQUEST URL:', `${YCW_BASE_URL}${path}?${queryString}`);
+
     try {
       const response = await firstValueFrom(
         this.httpService.get<T>(`${YCW_BASE_URL}${path}`, {
@@ -49,21 +62,19 @@ export class YcwHttpService {
             'X-API-KEY': apiKey,
             Accept: 'text/plain',
           },
-          params,
+
+          params: cleanParams,
+
           timeout: REQUEST_TIMEOUT,
 
-          /**
-           * Серіалізація масивів як повторювані параметри без індексів:
-           * ['ru', 'gb'] → Countries=ru&Countries=gb
-           * (а не Countries[0]=ru&Countries[1]=gb або Countries[]=ru)
-           *
-           * Саме такий формат очікує YouControl API.
-           */
-          paramsSerializer: {
-            indexes: null,
-          },
+          paramsSerializer: (params) =>
+            qs.stringify(params, {
+              arrayFormat: 'repeat',
+              skipNulls: true,
+            }),
         }),
       );
+
       return response.data;
     } catch (error) {
       this.handleError(error, path);

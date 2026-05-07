@@ -19,6 +19,7 @@ export class YcSearchService {
 
   async search(dto: SearchEntitiesDto) {
     const cacheKey = this.buildCacheKey(dto);
+    console.log('dto:', dto);
 
     /**
      * 1. READY CACHE

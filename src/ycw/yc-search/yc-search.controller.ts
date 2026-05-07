@@ -15,7 +15,13 @@ export class YcSearchController {
     description:
       'Пошук компаній, осіб, санкцій тощо. Повертає структуровані результати + агрегації у двох форматах (raw та grouped).',
   })
-  search(@Query() dto: SearchEntitiesDto) {
+  search(
+    @Query() dto: SearchEntitiesDto,
+    @Query() query: Record<string, unknown>,
+  ) {
+    console.log(query);
+    console.log(dto);
+
     return this.ycSearchService.search(dto);
   }
 }
