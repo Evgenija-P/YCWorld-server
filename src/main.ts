@@ -24,6 +24,7 @@ async function bootstrap() {
     origin: [
       'http://localhost:3000',
       'http://localhost:4000',
+      'http://192.168.111.52:4000',
       'https://ycwmonitor.netlify.app',
     ],
     credentials: true,
