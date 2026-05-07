@@ -9,17 +9,35 @@ import {
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
+/**
+ * Хелпер: приводить значення до масиву рядків.
+ * Axios з фронту може передати:
+ *  - масив:  countries[]=ru&countries[]=gb  → ['ru', 'gb']  ✅ вже масив
+ *  - рядок:  countries=ru,gb               → 'ru,gb'       потребує split
+ *  - один:   countries=ru                  → 'ru'          потребує wrap
+ */
+function toStringArray({ value }: { value: unknown }): string[] | undefined {
+  if (!value) return undefined;
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === 'string')
+    return value
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  return undefined;
+}
+
 export class SearchEntitiesDto {
   @ApiProperty({
     description: 'Пошуковий рядок: назва, ЄДРПОУ, ПІБ, телефон тощо',
-    example: 'Пошуковець',
+    example: 'Roman Borisovich Rotenberg',
   })
   @IsString()
   searchString: string;
 
   @ApiProperty({
     description: 'Тип сутності: Company, Person, Sanction тощо (з /yc/schemas)',
-    example: 'Company',
+    example: 'Person',
     required: false,
   })
   @IsOptional()
@@ -33,6 +51,7 @@ export class SearchEntitiesDto {
     type: [String],
   })
   @IsOptional()
+  @Transform(toStringArray)
   @IsArray()
   @IsString({ each: true })
   dataSetIds?: string[];
@@ -44,13 +63,14 @@ export class SearchEntitiesDto {
     type: [String],
   })
   @IsOptional()
+  @Transform(toStringArray)
   @IsArray()
   @IsString({ each: true })
   countries?: string[];
 
   @ApiProperty({
-    description: 'Кількість результатів на сторінці',
-    example: 10,
+    description: 'Кількість результатів на сторінці (за замовчуванням 10)',
+    example: 15,
     required: false,
   })
   @IsOptional()
@@ -60,8 +80,8 @@ export class SearchEntitiesDto {
   pageSize?: number;
 
   @ApiProperty({
-    description: 'Зміщення (пагінація)',
-    example: 0,
+    description: 'Зміщення від початку списку. Offset = (page - 1) * pageSize',
+    example: 14,
     required: false,
   })
   @IsOptional()
@@ -71,8 +91,8 @@ export class SearchEntitiesDto {
   offset?: number;
 
   @ApiProperty({
-    description: 'Фільтр тільки PEP',
-    example: false,
+    description: 'Тільки PEP (Politically Exposed Persons)',
+    example: true,
     required: false,
   })
   @IsOptional()

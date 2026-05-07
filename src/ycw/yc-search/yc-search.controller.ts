@@ -1,7 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { YcSearchService } from './yc-search.service';
-import { SearchEntitiesDto } from '../search-entities.dto';
+import { SearchEntitiesDto } from './search-entities.dto';
 
 @ApiTags('YC Search')
 @ApiBearerAuth('JWT-auth')

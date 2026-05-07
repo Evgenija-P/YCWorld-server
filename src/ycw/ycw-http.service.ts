@@ -51,6 +51,17 @@ export class YcwHttpService {
           },
           params,
           timeout: REQUEST_TIMEOUT,
+
+          /**
+           * Серіалізація масивів як повторювані параметри без індексів:
+           * ['ru', 'gb'] → Countries=ru&Countries=gb
+           * (а не Countries[0]=ru&Countries[1]=gb або Countries[]=ru)
+           *
+           * Саме такий формат очікує YouControl API.
+           */
+          paramsSerializer: {
+            indexes: null,
+          },
         }),
       );
       return response.data;
@@ -66,9 +77,8 @@ export class YcwHttpService {
         (error.response?.data as Record<string, unknown>)?.message ??
         error.message;
 
-      this.logger.error(
-        `YCW API [${path}]: ${status} — ${typeof message === 'string' ? message : JSON.stringify(message)}`,
-      );
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
+      this.logger.error(`YCW API [${path}]: ${status} — ${String(message)}`);
 
       if (status === 401 || status === 403) {
         throw new UnauthorizedException(

@@ -64,8 +64,8 @@ export interface YcwSearchResponse {
   total: number;
   results: YcwSearchItem[];
   aggregations: {
-    raw: Record<string, unknown>[];       // оригінал з API
-    grouped: Record<string, unknown>;    // згрупований варіант
+    raw: Record<string, unknown>[]; // оригінал з API
+    grouped: Record<string, unknown>; // згрупований варіант
   };
 }
 
@@ -79,14 +79,16 @@ export interface YcwEntityResponse {
 // ─── Хелпери ─────────────────────────────────────────────────────────────────
 
 /** Видаляє технічні поля ArangoDB з об'єкта */
-function stripInternal<T extends Record<string, unknown>>(obj: T): Omit<T, '_key' | '_rev' | '_from' | '_to' | 'uids' | '_id'> {
+function stripInternal<T extends Record<string, unknown>>(
+  obj: T,
+): Omit<T, '_key' | '_rev' | '_from' | '_to' | 'uids' | '_id'> {
   const { _key, _rev, _from, _to, uids, _id, ...rest } = obj as any;
   return rest;
 }
 
 /** Повертає унікальні непорожні рядки */
 function uniq(arr: unknown[]): string[] {
-  return [...new Set(arr.filter(v => v != null && v !== '').map(String))];
+  return [...new Set(arr.filter((v) => v != null && v !== '').map(String))];
 }
 
 /** Конвертує boolean або рядок "true"/"false" */
@@ -136,7 +138,8 @@ function mergeItems(items: any[]): YcwItemMerged {
     if (item.dataSetId) dataSets.push(item.dataSetId);
     if (item.caption) captions.push(item.caption);
     if (toBool(item.isPep)) isPep = true;
-    if (Array.isArray(item.sanctions) && item.sanctions.length > 0) isSanctioned = true;
+    if (Array.isArray(item.sanctions) && item.sanctions.length > 0)
+      isSanctioned = true;
 
     for (const [key, val] of Object.entries(item.properties ?? {})) {
       if (!mergedProps[key]) mergedProps[key] = [];
@@ -171,10 +174,14 @@ function normalizeRelation(rel: any, mode: TransformMode): YcwRelation {
   const entityItems: any[] = rel.items ?? [];
 
   // збираємо role/relationship з усіх items relationData
-  const roles = uniq(rdItems.flatMap(i => i.properties?.role ?? []));
-  const relationships = uniq(rdItems.flatMap(i => i.properties?.relationship ?? []));
-  const startDates = uniq(rdItems.flatMap(i => i.properties?.startDate ?? []));
-  const endDates = uniq(rdItems.flatMap(i => i.properties?.endDate ?? []));
+  const roles = uniq(rdItems.flatMap((i) => i.properties?.role ?? []));
+  const relationships = uniq(
+    rdItems.flatMap((i) => i.properties?.relationship ?? []),
+  );
+  const startDates = uniq(
+    rdItems.flatMap((i) => i.properties?.startDate ?? []),
+  );
+  const endDates = uniq(rdItems.flatMap((i) => i.properties?.endDate ?? []));
 
   return {
     type: normalizeRelationType(rel.relationData?.schema ?? rel.schema),
@@ -182,9 +189,10 @@ function normalizeRelation(rel: any, mode: TransformMode): YcwRelation {
     relationship: relationships,
     startDate: startDates[0] ?? null,
     endDate: endDates[0] ?? null,
-    entity: mode === 'merge'
-      ? mergeItems(entityItems)
-      : entityItems.map(normalizeItem),
+    entity:
+      mode === 'merge'
+        ? mergeItems(entityItems)
+        : entityItems.map(normalizeItem),
   };
 }
 
@@ -210,7 +218,6 @@ function groupAggregations(filters: any[]): Record<string, unknown> {
 // ─── Публічні методи трансформації ───────────────────────────────────────────
 
 export class YcwTransformer {
-
   /**
    * Трансформує відповідь GET /GetEntities
    * Повертає структуровані результати + обидва варіанти агрегацій
@@ -218,12 +225,15 @@ export class YcwTransformer {
   static transformSearch(raw: any): YcwSearchResponse {
     const result = raw?.result ?? raw;
 
-    const results: YcwSearchItem[] = (result.entities ?? []).map((entity: any) => ({
-      externalId: entity.externalId ?? '',
-      items: (entity.items ?? []).map(normalizeItem),
-    }));
+    const results: YcwSearchItem[] = (result.entities ?? []).map(
+      (entity: any) => ({
+        externalId: entity.externalId ?? '',
+        items: (entity.items ?? []).map(normalizeItem),
+      }),
+    );
 
-    const rawFilters: Record<string, unknown>[] = result.aggregationFilters ?? [];
+    const rawFilters: Record<string, unknown>[] =
+      result.aggregationFilters ?? [];
 
     return {
       total: result.total ?? 0,
@@ -240,14 +250,19 @@ export class YcwTransformer {
    * mode = 'duplicate' — items окремо по датасетах
    * mode = 'merge'     — items злиті в один об'єкт
    */
-  static transformEntity(raw: any, mode: TransformMode = 'duplicate'): YcwEntityResponse {
+  static transformEntity(
+    raw: any,
+    mode: TransformMode = 'duplicate',
+  ): YcwEntityResponse {
     const result = raw?.result ?? raw;
     const entityItems: any[] = result.items ?? [];
 
     // групуємо relations по типу
     const relationsMap = new Map<string, YcwRelation[]>();
     for (const rel of result.relationsData ?? []) {
-      const type = normalizeRelationType(rel.relationData?.schema ?? rel.schema);
+      const type = normalizeRelationType(
+        rel.relationData?.schema ?? rel.schema,
+      );
       if (!relationsMap.has(type)) relationsMap.set(type, []);
       relationsMap.get(type)!.push(normalizeRelation(rel, mode));
     }
@@ -263,9 +278,10 @@ export class YcwTransformer {
         schema: rc.schema,
         count: Number(rc.count),
       })),
-      items: mode === 'merge'
-        ? mergeItems(entityItems)
-        : entityItems.map(normalizeItem),
+      items:
+        mode === 'merge'
+          ? mergeItems(entityItems)
+          : entityItems.map(normalizeItem),
       relations,
     };
   }
@@ -285,7 +301,10 @@ export class YcwTransformer {
     if (obj !== null && typeof obj === 'object') {
       const stripped = stripInternal(obj as Record<string, unknown>);
       return Object.fromEntries(
-        Object.entries(stripped).map(([k, v]) => [k, YcwTransformer.deepStrip(v)])
+        Object.entries(stripped).map(([k, v]) => [
+          k,
+          YcwTransformer.deepStrip(v),
+        ]),
       );
     }
     return obj;

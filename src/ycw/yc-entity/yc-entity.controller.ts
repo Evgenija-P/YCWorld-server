@@ -1,13 +1,11 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import {
   ApiTags,
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
-  ApiQuery,
 } from '@nestjs/swagger';
 import { YcEntityService } from './yc-entity.service';
-import type { TransformMode } from '../ycw.transformer';
 
 @ApiTags('YC Entity')
 @ApiBearerAuth('JWT-auth')
@@ -31,16 +29,10 @@ export class YcEntityController {
     description: 'externalId з результатів /yc/search',
     example: 'TGVnYWw6Om9jLWNvbXBhbmllcy1tZC0xMDAzNjAwMDc5MjQ2',
   })
-  @ApiQuery({
-    name: 'mode',
-    enum: ['duplicate', 'merge'],
-    required: false,
-    description: 'Формат items: duplicate (по датасетах) або merge (злиті)',
-  })
   async getEntity(
-    @Param('externalId') externalId: string,
-    @Query('mode') mode: TransformMode = 'duplicate',
+    @Param('externalId')
+    externalId: string,
   ) {
-    return await this.ycEntityService.getEntity(externalId, mode);
+    return await this.ycEntityService.getEntity(externalId);
   }
 }
