@@ -20,13 +20,12 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   // 3. CORS (для локальної мережі)
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : ['http://localhost:3000', 'http://localhost:4000'];
+
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:4000',
-      'http://192.168.111.52:4000',
-      'https://ycwmonitor.netlify.app',
-    ],
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

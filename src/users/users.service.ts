@@ -102,11 +102,14 @@ export class UsersService implements OnModuleInit {
     newPassword: string,
     companyId: string | Types.ObjectId,
   ) {
-    const user = await this.userModel.findOne({
-      _id: userId,
-      companyId,
-    });
+    // const user = await this.userModel.findOne({
+    //   _id: new Types.ObjectId(userId),
+    //   companyId,
+    // });
 
+    // Тимчасово — шукаємо тільки по _id без companyId
+    const user = await this.userModel.findById(userId);
+    console.log('Found user:', user);
     if (!user) throw new Error('User not found');
 
     const salt = await bcrypt.genSalt(10);
