@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Patch, Post, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -81,5 +90,16 @@ export class UsersController {
     @Req() req: Request & { user: AuthenticatedUser },
   ) {
     return this.usersService.toggleActive(userId, req.user);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Видалити користувача' })
+  @ApiParam({ name: 'id', example: '65f1c9e2b3a...' })
+  async deleteUser(
+    @Param('id') userId: string,
+    @Req() req: Request & { user: AuthenticatedUser },
+  ) {
+    return this.usersService.deleteUser(userId, req.user);
   }
 }

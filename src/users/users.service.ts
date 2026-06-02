@@ -102,14 +102,11 @@ export class UsersService implements OnModuleInit {
     newPassword: string,
     companyId: string | Types.ObjectId,
   ) {
-    // const user = await this.userModel.findOne({
-    //   _id: new Types.ObjectId(userId),
-    //   companyId,
-    // });
+    const user = await this.userModel.findOne({
+      _id: userId,
+      companyId,
+    });
 
-    // Тимчасово — шукаємо тільки по _id без companyId
-    const user = await this.userModel.findById(userId);
-    console.log('Found user:', user);
     if (!user) throw new Error('User not found');
 
     const salt = await bcrypt.genSalt(10);
@@ -225,5 +222,28 @@ export class UsersService implements OnModuleInit {
 
   async findUsersByCompany(companyId: string): Promise<User[]> {
     return this.userModel.find({ companyId });
+  }
+
+  async deleteUser(userId: string, reqUser: AuthenticatedUser) {
+    const user = await this.userModel.findById(userId);
+
+    if (!user) throw new Error('User not found');
+
+    // Не можна видалити себе
+    if (user._id.toString() === reqUser.id.toString()) {
+      throw new Error('Cannot delete yourself');
+    }
+
+    // ADMIN — тільки своя компанія
+    if (
+      reqUser.role === UserRole.ADMIN &&
+      user.companyId.toString() !== reqUser.companyId.toString()
+    ) {
+      throw new Error('Access denied');
+    }
+
+    await this.userModel.findByIdAndDelete(userId);
+
+    return { success: true };
   }
 }
