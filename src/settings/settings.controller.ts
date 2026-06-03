@@ -12,7 +12,7 @@ export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
   @Post('api-key')
-  @Roles(UserRole.SUPERADMIN)
+  @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)
   @ApiOperation({ summary: 'Зберегти API ключ' })
   @ApiBody({ type: SetApiKeyDto })
   async setApiKey(@Body() dto: SetApiKeyDto) {
@@ -20,7 +20,7 @@ export class SettingsController {
   }
 
   @Get('api-key')
-  @Roles(UserRole.SUPERADMIN)
+  @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)
   @ApiOperation({ summary: 'Отримати API ключ' })
   async getApiKey() {
     return this.settingsService.getApiKey();

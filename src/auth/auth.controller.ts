@@ -84,8 +84,6 @@ export class AuthController {
     @Body() dto: ChangePasswordDto,
     @Req() req: { user: AuthenticatedUser },
   ) {
-    console.log('Changing password for user:', req.user.id);
-    console.log('New password:', dto.newPassword);
     return this.usersService.changePassword(
       req.user.id,
       dto.newPassword,
@@ -94,10 +92,13 @@ export class AuthController {
   }
 
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Скинути пароль (адміністратор)' })
+  @ApiOperation({
+    summary:
+      'Скинути пароль (SUPERADMIN — будь-який юзер, ADMIN — тільки своя компанія)',
+  })
   @ApiBody({ type: ResetPasswordDto })
   @Post('admin/reset-password')
-  @Roles(UserRole.SUPERADMIN)
+  @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)
   async resetPassword(
     @Body() dto: ResetPasswordDto,
     @Req() req: { user: AuthenticatedUser },
@@ -105,7 +106,7 @@ export class AuthController {
     return this.usersService.adminResetPassword(
       dto.userId,
       dto.newPassword,
-      req.user.companyId,
+      req.user,
     );
   }
 }

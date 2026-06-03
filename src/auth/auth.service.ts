@@ -62,6 +62,10 @@ export class AuthService {
       throw new UnauthorizedException('Невірний пароль');
     }
 
+    if (!user.isActive) {
+      throw new UnauthorizedException('USER_INACTIVE');
+    }
+
     return {
       id: user._id.toString(),
       login: user.login,

@@ -103,8 +103,6 @@ export class YcCountriesService implements OnModuleInit {
       });
     }
 
-    console.log('Countries updated successfully', existing);
-
     return {
       success: true,
       updatedAt: new Date(),

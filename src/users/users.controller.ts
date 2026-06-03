@@ -29,6 +29,7 @@ import {
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  // ─── Створення ────────────────────────────────────────────────────────────
   @Post()
   @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)
   @ApiOperation({ summary: 'Створити користувача' })
@@ -40,31 +41,27 @@ export class UsersController {
     return this.usersService.create(dto, req.user);
   }
 
-  // 🔹 SUPERADMIN — всі користувачі
-  @Get('all')
-  @Roles(UserRole.SUPERADMIN)
-  @ApiOperation({ summary: 'Отримати всіх користувачів (SUPERADMIN)' })
-  async findAllUsers() {
-    return this.usersService.findAllUsers();
-  }
-
-  // 🔹 ADMIN — тільки своя компанія
+  // ─── Отримання списку ─────────────────────────────────────────────────────
+  // SUPERADMIN — всі, ADMIN — своя компанія (логіка в сервісі)
   @Get()
-  @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Отримати користувачів своєї компанії (ADMIN)' })
-  async findMyCompanyUsers(@Req() req: Request & { user: AuthenticatedUser }) {
-    return this.usersService.findByCompany(req.user.companyId);
+  @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Отримати користувачів (SUPERADMIN — всі, ADMIN — своя компанія)',
+  })
+  async findUsers(@Req() req: Request & { user: AuthenticatedUser }) {
+    return this.usersService.findAllUsers(req.user);
   }
 
+  // ─── Отримання одного ────────────────────────────────────────────────────
   @Get(':id')
   @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Отримати користувача' })
+  @ApiOperation({ summary: 'Отримати користувача за ID' })
   @ApiParam({ name: 'id', example: '65f1c9e2b3a...' })
   async findUserById(@Param('id') userId: string) {
     return this.usersService.findById(userId);
   }
 
-  // 🔹 update користувача
+  // ─── Редагування ─────────────────────────────────────────────────────────
   @Patch(':id')
   @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)
   @ApiOperation({ summary: 'Оновити користувача' })
@@ -78,7 +75,7 @@ export class UsersController {
     return this.usersService.updateUser(userId, dto, req.user);
   }
 
-  // 🔹 toggle active
+  // ─── Блокування/розблокування ─────────────────────────────────────────────
   @Patch(':id/toggle-active')
   @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)
   @ApiOperation({
@@ -92,6 +89,7 @@ export class UsersController {
     return this.usersService.toggleActive(userId, req.user);
   }
 
+  // ─── Видалення ────────────────────────────────────────────────────────────
   @Delete(':id')
   @Roles(UserRole.SUPERADMIN, UserRole.ADMIN)
   @ApiOperation({ summary: 'Видалити користувача' })

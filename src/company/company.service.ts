@@ -77,7 +77,10 @@ export class CompanyService {
     });
 
     if (usersCount > 0) {
-      throw new BadRequestException('У компанії є користувачі');
+      throw new BadRequestException({
+        code: 'COMPANY_HAS_USERS',
+        message: 'Company has users',
+      });
     }
 
     return this.companyModel.findByIdAndDelete(id);

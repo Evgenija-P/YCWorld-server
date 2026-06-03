@@ -89,7 +89,9 @@ export class YcwHttpService {
         error.message;
 
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      this.logger.error(`YCW API [${path}]: ${status} — ${String(message)}`);
+      this.logger.error(
+        `YCW API [${path}] ${status} — ${typeof message === 'string' ? message : 'API error'}`,
+      );
 
       if (status === 401 || status === 403) {
         throw new UnauthorizedException(

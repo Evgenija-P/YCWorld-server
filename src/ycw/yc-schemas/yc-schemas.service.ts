@@ -117,8 +117,6 @@ export class YcSchemasService implements OnModuleInit {
       });
     }
 
-    console.log('Schemas updated successfully');
-
     return {
       success: true,
       updatedAt: new Date(),
