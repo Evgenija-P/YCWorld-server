@@ -48,7 +48,7 @@ export class YcTraceService {
     /**
      * CACHE
      */
-    const cached = this.requestCache.get<unknown>(cacheKey);
+    const cached = await this.requestCache.get<unknown>(cacheKey);
 
     if (cached) {
       console.log(`[YC TRACE] CACHE HIT ${traceType}`);
@@ -86,7 +86,7 @@ export class YcTraceService {
     try {
       const response = await this.ycwHttp.get<unknown>(endpoint);
 
-      this.requestCache.set(cacheKey, response, this.getMsUntilEndOfDay());
+      await this.requestCache.set(cacheKey, response, 60 * 60 * 24 * 30); // 30 днів
 
       console.log(`[YC TRACE RESPONSE] ${cacheKey}`, response);
       return response;

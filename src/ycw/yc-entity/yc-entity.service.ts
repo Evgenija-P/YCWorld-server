@@ -18,7 +18,7 @@ export class YcEntityService {
     /**
      * CACHE
      */
-    const cached = this.requestCache.get<unknown>(cacheKey);
+    const cached = await this.requestCache.get<unknown>(cacheKey);
 
     if (cached) {
       console.log('[YC ENTITY] CACHE HIT');
@@ -63,7 +63,7 @@ export class YcEntityService {
         `/Entity/${encodedExternalId}/get-entity`,
       );
 
-      this.requestCache.set(cacheKey, response, this.getMsUntilEndOfDay());
+      await this.requestCache.set(cacheKey, response, 60 * 60 * 24 * 30); // 30 днів
 
       return response;
     } finally {

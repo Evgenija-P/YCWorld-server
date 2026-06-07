@@ -8,9 +8,9 @@ import { RequestCacheService } from './request-cache.service';
 export class YcSearchService {
   /**
    * TTL кешу
-   * 1 година
+   * 30 днів
    */
-  private readonly CACHE_TTL = 1000 * 60 * 60;
+  private readonly CACHE_TTL_SEC = 60 * 60 * 24 * 30;
 
   constructor(
     private readonly ycwHttp: YcwHttpService,
@@ -19,16 +19,13 @@ export class YcSearchService {
 
   async search(dto: SearchEntitiesDto) {
     const cacheKey = this.buildCacheKey(dto);
-    console.log('dto:', dto);
 
     /**
      * 1. READY CACHE
      */
-    const cached = this.requestCache.get<unknown>(cacheKey);
+    const cached = await this.requestCache.get<unknown>(cacheKey);
 
     if (cached) {
-      console.log('[YC SEARCH] CACHE HIT');
-
       return cached;
     }
 
@@ -38,15 +35,12 @@ export class YcSearchService {
     const pending = this.requestCache.getPending<unknown>(cacheKey);
 
     if (pending) {
-      console.log('[YC SEARCH] PENDING HIT');
-
       return pending;
     }
 
     /**
      * 3. REAL REQUEST
      */
-    console.log('[YC SEARCH] REAL API REQUEST');
 
     const requestPromise: Promise<unknown> = this.fetchAndCache(cacheKey, dto);
 
@@ -79,7 +73,7 @@ export class YcSearchService {
       /**
        * Зберігаємо готовий response
        */
-      this.requestCache.set(cacheKey, response, this.CACHE_TTL);
+      await this.requestCache.set(cacheKey, response, this.CACHE_TTL_SEC);
 
       return response;
     } finally {
